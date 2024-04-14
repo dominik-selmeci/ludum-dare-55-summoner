@@ -38,10 +38,8 @@ public class GameManager : MonoBehaviour
         if (edge == "bottom") y = -6f;
         if (edge == "left") x = -10f;
 
-        Debug.Log("Spawn, edge: " + edge);
         Ghost newGhost = Instantiate(_ghostPrefab, new Vector3(x, y, 0f), Quaternion.identity);
         if (x < 0) newGhost.GetComponent<SpriteRenderer>().flipX = true;
-        Debug.Log("Ghost pos: " + newGhost.transform.position);
         newGhost.SetDirection(GetNearestTotemDirection(newGhost));
     }
 
