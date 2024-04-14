@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -129,5 +130,11 @@ public class GameManager : MonoBehaviour
     {
         _summoningTime += Time.time - _startSummoningTime;
         _startSummoningTime = 0;
+    }
+
+    public void Restart()
+    {
+        SceneManager.LoadScene(0);
+        Time.timeScale = 1;
     }
 }
