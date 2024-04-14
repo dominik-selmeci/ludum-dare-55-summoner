@@ -5,6 +5,7 @@ public class Totem : MonoBehaviour
 {
     private float _health = 1f;
     public event Action TotemDestroyed;
+    public event Action TotemDamaged;
 
     public void DamageIncoming()
     {
@@ -13,7 +14,10 @@ public class Totem : MonoBehaviour
         {
             Destroy(gameObject);
             TotemDestroyed?.Invoke();
+            return;
         }
+
+        TotemDamaged?.Invoke();
         GetComponentInChildren<TotemHealth>().SetHealth(_health);
     }
 }

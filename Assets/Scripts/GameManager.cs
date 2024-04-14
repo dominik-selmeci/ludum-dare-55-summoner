@@ -9,8 +9,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] SummoningParticles _summoningParticles;
     [SerializeField] Canvas _winningCanvas;
     [SerializeField] Canvas _lostCanvas;
+    [SerializeField] CameraShake _cameraShake;
     float _nextSpawn;
-    int spawnTime = 1;
+    float spawnTime = 3f;
     float _summoningTime = 0;
     float _startSummoningTime = 0;
 
@@ -22,7 +23,13 @@ public class GameManager : MonoBehaviour
         _totems.ForEach(totem =>
         {
             totem.TotemDestroyed += GameOver;
+            totem.TotemDamaged += TotemDamaged;
         });
+    }
+
+    private void TotemDamaged()
+    {
+        StartCoroutine(_cameraShake.Shake(0.3f, 0.1f));
     }
 
     void GameOver()
@@ -47,11 +54,31 @@ public class GameManager : MonoBehaviour
             var emission = _summoningParticles.GetComponent<ParticleSystem>().emission;
             emission.rateOverTime = 600f * (summoningTime / 60f);
 
+            if (summoningTime > 15) spawnTime = 2f;
+            if (summoningTime > 30) spawnTime = 1.4f;
+            if (summoningTime > 45) spawnTime = 0.8f;
+
+
+            var main = _summoningParticles.GetComponent<ParticleSystem>().main;
+            main.startLifetime = 1.5f + 3.5f * (summoningTime / 60f);
+            ColorUtility.TryParseHtmlString("#F384F8", out Color myColor);
+            main.startColor = myColor;
+
+
             if (summoningTime > 60f)
             {
                 _winningCanvas.gameObject.SetActive(true);
                 Time.timeScale = 0;
             }
+        }
+        else
+        {
+            ColorUtility.TryParseHtmlString("#FFFFFF", out Color myColor);
+            var main = _summoningParticles.GetComponent<ParticleSystem>().main;
+            main.startColor = myColor;
+
+            var emission = _summoningParticles.GetComponent<ParticleSystem>().emission;
+            emission.rateOverTime = 10f;
         }
 
 
