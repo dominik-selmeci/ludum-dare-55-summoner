@@ -5,13 +5,30 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField] Ghost _ghostPrefab;
     [SerializeField] List<Totem> _totems;
+    [SerializeField] SummoningTimeBar _summoningTimeBar;
+    [SerializeField] SummoningParticles _summoningParticles;
+    [SerializeField] Canvas _winningCanvas;
+    [SerializeField] Canvas _lostCanvas;
     float _nextSpawn;
     int spawnTime = 1;
+    float _summoningTime = 0;
+    float _startSummoningTime = 0;
 
     // Start is called before the first frame update
     void Start()
     {
         _nextSpawn = Time.time + spawnTime;
+
+        _totems.ForEach(totem =>
+        {
+            totem.TotemDestroyed += GameOver;
+        });
+    }
+
+    void GameOver()
+    {
+        _lostCanvas.gameObject.SetActive(true);
+        Time.timeScale = 0;
     }
 
     // Update is called once per frame
@@ -22,6 +39,22 @@ public class GameManager : MonoBehaviour
             Spawn();
             _nextSpawn = Time.time + spawnTime;
         }
+
+        if (_startSummoningTime != 0)
+        {
+            float summoningTime = _summoningTime + (Time.time - _startSummoningTime);
+            _summoningTimeBar.transform.localScale = new Vector3(summoningTime / 60f, 0.5f, 1f);
+            var emission = _summoningParticles.GetComponent<ParticleSystem>().emission;
+            emission.rateOverTime = 600f * (summoningTime / 60f);
+
+            if (summoningTime > 60f)
+            {
+                _winningCanvas.gameObject.SetActive(true);
+                Time.timeScale = 0;
+            }
+        }
+
+
     }
 
     void Spawn()
@@ -31,7 +64,6 @@ public class GameManager : MonoBehaviour
         string edge = edges[index];
         float x = Random.Range(-10f, 10f);
         float y = Random.Range(-6f, 6f);
-
 
         if (edge == "top") y = 6f;
         if (edge == "right") x = 10f;
@@ -58,8 +90,17 @@ public class GameManager : MonoBehaviour
             }
         });
 
-        Debug.Log(nearestTotem);
-
         return (nearestTotem - ghost.transform.position).normalized;
+    }
+
+    internal void StartSummoningTime()
+    {
+        _startSummoningTime = Time.time;
+    }
+
+    internal void StopSummoningTime()
+    {
+        _summoningTime += Time.time - _startSummoningTime;
+        _startSummoningTime = 0;
     }
 }

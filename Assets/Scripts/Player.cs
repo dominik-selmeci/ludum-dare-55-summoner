@@ -1,9 +1,11 @@
+using System;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
     [SerializeField] Fireball _spellPrefab;
     [SerializeField] float _movementSpeed = 4;
+    [SerializeField] GameManager gameManager;
     Rigidbody2D _rigidBody;
 
     // Start is called before the first frame update
@@ -29,5 +31,15 @@ public class Player : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
         Vector2 move = new Vector2(horizontal, vertical);
         _rigidBody.velocity = move * _movementSpeed;
+    }
+
+    public void StartSummoningTime()
+    {
+        gameManager.StartSummoningTime();
+    }
+
+    public void StopSummoningTime()
+    {
+        gameManager.StopSummoningTime();
     }
 }
