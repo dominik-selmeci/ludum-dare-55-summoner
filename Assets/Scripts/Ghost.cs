@@ -1,9 +1,12 @@
+using System;
 using UnityEngine;
 
 public class Ghost : MonoBehaviour
 {
     Vector3 _direction;
     Rigidbody2D _rigidBody;
+
+    public event Action GhostDeath;
 
     // Start is called before the first frame update
     void Start()
@@ -34,9 +37,17 @@ public class Ghost : MonoBehaviour
     void OnCollisionEnter2D(Collision2D collision)
     {
         Totem totem = collision.collider.GetComponent<Totem>();
-        if (totem == null) return;
+        if (totem != null)
+        {
+            totem.DamageIncoming();
+            Destroy(gameObject);
+            return;
+        }
 
-        totem.DamageIncoming();
-        Destroy(gameObject);
+        Fireball fireball = collision.collider.GetComponent<Fireball>();
+        if (fireball != null)
+        {
+            GhostDeath?.Invoke();
+        }
     }
 }

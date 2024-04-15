@@ -8,34 +8,44 @@ public class GameManager : MonoBehaviour
     [SerializeField] List<Totem> _totems;
     [SerializeField] SummoningTimeBar _summoningTimeBar;
     [SerializeField] SummoningParticles _summoningParticles;
+    [SerializeField] Canvas _introCanvas;
+    [SerializeField] Canvas _tutorialCanvas;
     [SerializeField] Canvas _winningCanvas;
     [SerializeField] Canvas _lostCanvas;
     [SerializeField] CameraShake _cameraShake;
+    AudioSource _audioSource;
     float _nextSpawn;
-    float spawnTime = 3f;
+    float _spawnTime = 3f;
     float _summoningTime = 0;
     float _startSummoningTime = 0;
+    [SerializeField] AudioClip _damageSfx;
+    [SerializeField] AudioClip _ghostDeathSfx;
 
-    // Start is called before the first frame update
     void Start()
     {
-        _nextSpawn = Time.time + spawnTime;
+        _audioSource = GetComponent<AudioSource>();
+        _nextSpawn = Time.time + _spawnTime;
 
         _totems.ForEach(totem =>
         {
             totem.TotemDestroyed += GameOver;
             totem.TotemDamaged += TotemDamaged;
         });
+
+        Time.timeScale = 0;
+        _introCanvas.gameObject.SetActive(true);
     }
 
     private void TotemDamaged()
     {
         StartCoroutine(_cameraShake.Shake(0.3f, 0.1f));
+        _audioSource.PlayOneShot(_damageSfx);
     }
 
     void GameOver()
     {
         _lostCanvas.gameObject.SetActive(true);
+        _audioSource.Stop();
         Time.timeScale = 0;
     }
 
@@ -45,7 +55,7 @@ public class GameManager : MonoBehaviour
         if (_nextSpawn < Time.time)
         {
             Spawn();
-            _nextSpawn = Time.time + spawnTime;
+            _nextSpawn = Time.time + _spawnTime;
         }
 
         if (_startSummoningTime != 0)
@@ -55,9 +65,9 @@ public class GameManager : MonoBehaviour
             var emission = _summoningParticles.GetComponent<ParticleSystem>().emission;
             emission.rateOverTime = 600f * (summoningTime / 60f);
 
-            if (summoningTime > 15) spawnTime = 2f;
-            if (summoningTime > 30) spawnTime = 1.4f;
-            if (summoningTime > 45) spawnTime = 0.8f;
+            if (summoningTime > 15) _spawnTime = 2f;
+            if (summoningTime > 30) _spawnTime = 1.4f;
+            if (summoningTime > 45) _spawnTime = 0.8f;
 
 
             var main = _summoningParticles.GetComponent<ParticleSystem>().main;
@@ -99,8 +109,14 @@ public class GameManager : MonoBehaviour
         if (edge == "left") x = -10f;
 
         Ghost newGhost = Instantiate(_ghostPrefab, new Vector3(x, y, 0f), Quaternion.identity);
+        newGhost.GhostDeath += GhostDeath;
         if (x < 0) newGhost.GetComponent<SpriteRenderer>().flipX = true;
         newGhost.SetDirection(GetNearestTotemDirection(newGhost));
+    }
+
+    void GhostDeath()
+    {
+        _audioSource.PlayOneShot(_ghostDeathSfx);
     }
 
     Vector3 GetNearestTotemDirection(Ghost ghost)
@@ -135,6 +151,23 @@ public class GameManager : MonoBehaviour
     public void Restart()
     {
         SceneManager.LoadScene(0);
+
         Time.timeScale = 1;
+        _introCanvas.gameObject.SetActive(false);
+        _tutorialCanvas.gameObject.SetActive(false);
+    }
+
+    public void ShowTutorialCanvas()
+    {
+        _tutorialCanvas.gameObject.SetActive(true);
+        _introCanvas.gameObject.SetActive(false);
+
+    }
+
+    public void StartGame()
+    {
+        _tutorialCanvas.gameObject.SetActive(false);
+        Time.timeScale = 1;
+        _audioSource.Play();
     }
 }
