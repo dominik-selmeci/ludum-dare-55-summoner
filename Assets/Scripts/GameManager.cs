@@ -4,27 +4,43 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Objects & Prefabs")]
     [SerializeField] Ghost _ghostPrefab;
-    [SerializeField] List<Totem> _totems;
     [SerializeField] SummoningTimeBar _summoningTimeBar;
     [SerializeField] SummoningParticles _summoningParticles;
+    [SerializeField] List<Totem> _totems;
+
+    [Header("UI Canvases")]
     [SerializeField] Canvas _introCanvas;
     [SerializeField] Canvas _tutorialCanvas;
     [SerializeField] Canvas _winningCanvas;
     [SerializeField] Canvas _lostCanvas;
     [SerializeField] CameraShake _cameraShake;
+
+    [Header("Audio SFX & Music")]
+    [SerializeField] AudioClip _damageSfx;
+    [SerializeField] AudioClip _ghostDeathSfx;
+    [SerializeField] AudioClip _music;
+
+    [Header("Colors")]
+    [SerializeField] Color _white; // #FFFFFF
+    [SerializeField] Color _pink; // #F384F8
+
+    ParticleSystem _particleSystem;
+    ParticleSystem.EmissionModule _particleSystemEmission;
+    ParticleSystem.MainModule _particleSystemMain;
     AudioSource _audioSource;
-    float _nextSpawn;
+    float _nextSpawn = 0;
     float _spawnTime = 3f;
     float _summoningTime = 0;
     float _startSummoningTime = 0;
-    [SerializeField] AudioClip _damageSfx;
-    [SerializeField] AudioClip _ghostDeathSfx;
 
     void Start()
     {
         _audioSource = GetComponent<AudioSource>();
-        _nextSpawn = Time.time + _spawnTime;
+        _particleSystem = _summoningParticles.GetComponent<ParticleSystem>();
+        _particleSystemEmission = _particleSystem.emission;
+        _particleSystemMain = _particleSystem.main;
 
         _totems.ForEach(totem =>
         {
@@ -34,6 +50,7 @@ public class GameManager : MonoBehaviour
 
         Time.timeScale = 0;
         _introCanvas.gameObject.SetActive(true);
+        SetSpawnTime();
     }
 
     private void TotemDamaged()
@@ -49,32 +66,23 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 0;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (_nextSpawn < Time.time)
-        {
-            Spawn();
-            _nextSpawn = Time.time + _spawnTime;
-        }
+        SetSpawnTime();
 
         if (_startSummoningTime != 0)
         {
             float summoningTime = _summoningTime + (Time.time - _startSummoningTime);
             _summoningTimeBar.transform.localScale = new Vector3(summoningTime / 60f, 0.5f, 1f);
-            var emission = _summoningParticles.GetComponent<ParticleSystem>().emission;
-            emission.rateOverTime = 600f * (summoningTime / 60f);
+
+            _particleSystemEmission.rateOverTime = 600f * (summoningTime / 60f);
 
             if (summoningTime > 15) _spawnTime = 2f;
             if (summoningTime > 30) _spawnTime = 1.4f;
             if (summoningTime > 45) _spawnTime = 0.8f;
 
-
-            var main = _summoningParticles.GetComponent<ParticleSystem>().main;
-            main.startLifetime = 1.5f + 3.5f * (summoningTime / 60f);
-            ColorUtility.TryParseHtmlString("#F384F8", out Color myColor);
-            main.startColor = myColor;
-
+            _particleSystemMain.startLifetime = 1.5f + 3.5f * (summoningTime / 60f);
+            _particleSystemMain.startColor = _pink;
 
             if (summoningTime > 60f)
             {
@@ -84,15 +92,18 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            ColorUtility.TryParseHtmlString("#FFFFFF", out Color myColor);
-            var main = _summoningParticles.GetComponent<ParticleSystem>().main;
-            main.startColor = myColor;
-
-            var emission = _summoningParticles.GetComponent<ParticleSystem>().emission;
-            emission.rateOverTime = 10f;
+            _particleSystemMain.startColor = _white;
+            _particleSystemEmission.rateOverTime = 10f;
         }
+    }
 
-
+    void SetSpawnTime()
+    {
+        if (_nextSpawn < Time.time || _nextSpawn == 0)
+        {
+            Spawn();
+            _nextSpawn = Time.time + _spawnTime;
+        }
     }
 
     void Spawn()
@@ -137,12 +148,12 @@ public class GameManager : MonoBehaviour
         return (nearestTotem - ghost.transform.position).normalized;
     }
 
-    internal void StartSummoningTime()
+    public void StartSummoningTime()
     {
         _startSummoningTime = Time.time;
     }
 
-    internal void StopSummoningTime()
+    public void StopSummoningTime()
     {
         _summoningTime += Time.time - _startSummoningTime;
         _startSummoningTime = 0;
@@ -161,13 +172,13 @@ public class GameManager : MonoBehaviour
     {
         _tutorialCanvas.gameObject.SetActive(true);
         _introCanvas.gameObject.SetActive(false);
-
     }
 
     public void StartGame()
     {
         _tutorialCanvas.gameObject.SetActive(false);
         Time.timeScale = 1;
+        _audioSource.clip = _music;
         _audioSource.Play();
     }
 }
